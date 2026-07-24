@@ -6,6 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
+from langchain_community.retrievers.multi_query import MultiQueryRetriever  # type: ignore
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,7 +22,7 @@ load_dotenv()
 #         print(transcript)
 #     except:
 #         print("no captions available for this video")
-llm=HuggingFaceEndpoint(repo_id="deepseek-ai/DeepSeek-V4-Pro",
+llm=HuggingFaceEndpoint(repo_id="deepseek-ai/DeepSeek-V4-Flash",
                         task="text-generation",
                         temperature=0.3)
 model=ChatHuggingFace(llm=llm)
@@ -41,6 +42,8 @@ prompt_template=PromptTemplate(
     input_variables=['context','question']
 )
 parser=StrOutputParser()
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
 while(True):
     video_id=input("\n==================================================\nEnter Video ID to process (or type 'exit' to quit): ")
@@ -62,29 +65,38 @@ while(True):
 
         chunks=splitter.split_documents(docs)
         print(f"Total Text Chunks Created: {len(chunks)}")
-        print("\n")
-        print(chunks[0])
+
 
 
         vector_store=Chroma.from_documents(
             documents=chunks,
             embedding=embedding,
-            collection_name="youtube_chatbot"
+            collection_name=f"yt_{video_id.lower()}"
         )
 
-        retriever = vector_store.as_retriever(search_type="similarity",search_kwargs={"k": 3})
+        base_retriever = vector_store.as_retriever(search_type="mmr",search_kwargs={"k": 3})
+        advanced_retriever=MultiQueryRetriever.from_llm(
+            retriever=base_retriever,
+            llm=model
+        )
+
         print("Vectorstore ready for questions!")
+     
+        setup_and_retrieval = RunnableParallel(
+            {
+                "context": advanced_retriever | RunnableLambda(format_docs),
+                "question": RunnablePassthrough()
+            }
+        )
+
+        rag_chain = setup_and_retrieval | prompt_template | model | parser
 
         while(True):
             user_query = input(f"\n[Video: {video_id}] Ask a question (or type 'back' for new video): ").strip()
             if user_query.lower() in ["back","exit"]:
                 break
 
-            relevant_docs=retriever.invoke(user_query)
-            context_text = "\n\n".join([doc.page_content for doc in relevant_docs])
-
-            prompt=prompt_template.invoke({"context":context_text,"question":user_query})
-            response=model.invoke(prompt)
+            response=rag_chain.invoke(user_query)
             print("\nAnswer:")
             print(response.content)
 
