@@ -26,6 +26,19 @@ model=ChatHuggingFace(llm=llm)
 
 embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
+prompt_template=PromptTemplate(
+    template="""Answer the question based ONLY on the provided video transcript context.
+    If you don't know the answer, say that you don't know based on this video.
+    
+    Context:
+    {context}
+    
+    Question: {question}
+    
+    Answer:""",
+    input_variables=['context','question']
+)
+
 while(True):
     video_id=input("\n==================================================\nEnter Video ID to process (or type 'exit' to quit): ")
     if video_id.lower()=="exit":
@@ -56,8 +69,21 @@ while(True):
             collection_name="youtube_chatbot"
         )
 
-        retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+        retriever = vector_store.as_retriever(search_type="similarity",search_kwargs={"k": 3})
         print("Vectorstore ready for questions!")
+
+        while(True):
+            user_query = input(f"\n[Video: {video_id}] Ask a question (or type 'back' for new video): ").strip()
+            if user_query.lower() in ["back","exit"]:
+                break
+
+            relevant_docs=retriever.invoke(user_query)
+            context_text = "\n\n".join([doc.page_content for doc in relevant_docs])
+            
+
+
+
+
 
 
 
