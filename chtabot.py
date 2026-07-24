@@ -4,6 +4,9 @@ from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import YoutubeLoader
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # while(True):
 #     video_id=input("enter a video_id to ask question:")
@@ -16,6 +19,12 @@ from langchain_community.document_loaders import YoutubeLoader
 #         print(transcript)
 #     except:
 #         print("no captions available for this video")
+llm=HuggingFaceEndpoint(repo_id="",
+                        task="text-generation",
+                        temperature=0.3)
+model=ChatHuggingFace(llm=llm)
+
+embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 while(True):
     video_id=input("\n==================================================\nEnter Video ID to process (or type 'exit' to quit): ")
@@ -39,6 +48,18 @@ while(True):
         print(f"Total Text Chunks Created: {len(chunks)}")
         print("\n")
         print(chunks[0])
+
+
+        vector_store=Chroma.from_documents(
+            documents=chunks,
+            embedding=embedding,
+            collection_name="youtube_chatbot"
+        )
+
+        retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+        print("Vectorstore ready for questions!")
+
+
 
     except Exception as e:
         print(f"\nError Details: {e}")
