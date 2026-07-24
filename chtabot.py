@@ -6,8 +6,12 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
-from langchain_community.retrievers.multi_query import MultiQueryRetriever  # type: ignore
 from dotenv import load_dotenv
+try:
+    from langchain.retrievers.multi_query import MultiQueryRetriever  # type: ignore
+except ImportError:
+    from langchain.retrievers import MultiQueryRetriever  # type: ignore
+
 
 load_dotenv()
 
@@ -98,16 +102,7 @@ while(True):
 
             response=rag_chain.invoke(user_query)
             print("\nAnswer:")
-            print(response.content)
+            print(response)
 
     except Exception as e:
         print(f"\nError Details: {e}")
-
-
-
-
-        
-
-
-
-
