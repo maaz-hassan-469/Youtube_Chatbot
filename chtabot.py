@@ -18,7 +18,7 @@ from langchain_community.document_loaders import YoutubeLoader
 #         print("no captions available for this video")
 
 while(True):
-    video_id=input("enter a video_id to ask question:")
+    video_id=input("\n==================================================\nEnter Video ID to process (or type 'exit' to quit): ")
     if video_id.lower()=="exit":
         break
     formatted_url = f"https://www.youtube.com/watch?v={video_id}"
@@ -31,12 +31,19 @@ while(True):
         )
 
         docs=loader.load()
-        print(docs[0].page_content[:400] + "...\n")
+        print("Transcript fetched successfully!")
+
+        splitter=RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=200)
+
+        chunks=splitter.split_documents(docs)
+        print(f"Total Text Chunks Created: {len(chunks)}")
+        print("\n")
+        print(chunks[0])
 
     except Exception as e:
         print(f"\nError Details: {e}")
 
-        
+
 
 
         
