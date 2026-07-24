@@ -4,6 +4,8 @@ from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import YoutubeLoader
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,7 +21,7 @@ load_dotenv()
 #         print(transcript)
 #     except:
 #         print("no captions available for this video")
-llm=HuggingFaceEndpoint(repo_id="",
+llm=HuggingFaceEndpoint(repo_id="deepseek-ai/DeepSeek-V4-Pro",
                         task="text-generation",
                         temperature=0.3)
 model=ChatHuggingFace(llm=llm)
@@ -38,6 +40,7 @@ prompt_template=PromptTemplate(
     Answer:""",
     input_variables=['context','question']
 )
+parser=StrOutputParser()
 
 while(True):
     video_id=input("\n==================================================\nEnter Video ID to process (or type 'exit' to quit): ")
@@ -79,13 +82,11 @@ while(True):
 
             relevant_docs=retriever.invoke(user_query)
             context_text = "\n\n".join([doc.page_content for doc in relevant_docs])
-            
 
-
-
-
-
-
+            prompt=prompt_template.invoke({"context":context_text,"question":user_query})
+            response=model.invoke(prompt)
+            print("\nAnswer:")
+            print(response.content)
 
     except Exception as e:
         print(f"\nError Details: {e}")
