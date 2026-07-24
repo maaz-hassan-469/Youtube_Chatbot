@@ -5,6 +5,18 @@ from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import YoutubeLoader
 
+# while(True):
+#     video_id=input("enter a video_id to ask question:")
+#     if video_id.lower()=="exit":
+#         break
+#     try:
+#         transcript_list=YouTubeTranscriptApi.get_transcript(video_id,languages=["en"])
+#         transcript=" ".join(chunk["text"] for chunk in transcript_list)
+#         print("\n--- Transcript Retrieved Successfully ---")
+#         print(transcript)
+#     except:
+#         print("no captions available for this video")
+
 while(True):
     video_id=input("enter a video_id to ask question:")
     if video_id.lower()=="exit":
@@ -23,6 +35,8 @@ while(True):
 
     except Exception as e:
         print(f"\nError Details: {e}")
+
+        
 
 
         
