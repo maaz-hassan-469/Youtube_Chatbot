@@ -7,6 +7,7 @@ from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
 from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 load_dotenv()
 
@@ -21,10 +22,15 @@ load_dotenv()
 #         print(transcript)
 #     except:
 #         print("no captions available for this video")
-llm=HuggingFaceEndpoint(repo_id="deepseek-ai/DeepSeek-V4-Flash",
-                        task="text-generation",
-                        temperature=0.3)
-model=ChatHuggingFace(llm=llm)
+# llm=HuggingFaceEndpoint(repo_id="deepseek-ai/DeepSeek-V4-Flash",
+#                         task="text-generation",
+#                         temperature=0.3)
+# model1=ChatHuggingFace(llm=llm)
+
+model= ChatGroq(
+    model_name="llama-3.1-8b-instant", 
+    temperature=0.2
+)
 
 embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
@@ -105,9 +111,10 @@ while(True):
             if user_query.lower() in ["back","exit"]:
                 break
 
-            response=rag_chain.invoke(user_query)
-            print("\nAnswer:")
-            print(response)
+            print("\nAnswer: ", end="", flush=True)
+            for chunk in rag_chain.stream(user_query):
+                 print(chunk, end="", flush=True)
+            print()
 
     except Exception as e:
         print(f"\nError Details: {e}")
