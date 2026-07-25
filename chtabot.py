@@ -7,12 +7,7 @@ from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
 from dotenv import load_dotenv
-try:
-    from langchain.retrievers.multi_query import MultiQueryRetriever  # type: ignore
-except ImportError:
-    from langchain.retrievers import MultiQueryRetriever  # type: ignore
-
-
+from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 load_dotenv()
 
 # while(True):
