@@ -89,7 +89,7 @@ while(True):
              )
 
 
-        base_retriever = vector_store.as_retriever(search_type="mmr",search_kwargs={"k": 3})
+        base_retriever = vector_store.as_retriever(search_type="mmr",search_kwargs={"k": 3,"fetch_k": 10, "lambda_mult": 0.5})
         advanced_retriever=MultiQueryRetriever.from_llm(
             retriever=base_retriever,
             llm=model
