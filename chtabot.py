@@ -1,6 +1,7 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpoint
-from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
+from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings
+# from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings
+# from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import YoutubeLoader
@@ -8,9 +9,10 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
+import os
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 load_dotenv()
-
+os.environ["HF_TOKEN"] = os.getenv("HUGGINGFACEHUB_API_TOKEN", "")
 # while(True):
 #     video_id=input("enter a video_id to ask question:")
 #     if video_id.lower()=="exit":
@@ -32,7 +34,8 @@ model= ChatGroq(
     temperature=0.2
 )
 
-embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embedding=HuggingFaceEndpointEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2")
 
 prompt_template=PromptTemplate(
     template="""Answer the question based ONLY on the provided video transcript context.
