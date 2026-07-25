@@ -51,27 +51,37 @@ while(True):
     formatted_url = f"https://www.youtube.com/watch?v={video_id}"
     print(f"🔎 Fetching transcript for Video ID: '{video_id}'...")
     try:
-        loader=YoutubeLoader.from_youtube_url(
-            formatted_url,
-            add_video_info=False,
-            language=["en","en-US","en-GB","hi"]
-        )
-
-        docs=loader.load()
-        print("Transcript fetched successfully!")
-
-        splitter=RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=200)
-
-        chunks=splitter.split_documents(docs)
-        print(f"Total Text Chunks Created: {len(chunks)}")
-
-
-
-        vector_store=Chroma.from_documents(
-            documents=chunks,
-            embedding=embedding,
+        vector_store=Chroma(
+            persist_directory="./chroma_db",
+            embedding_function=embedding,
             collection_name=f"yt_{video_id.lower()}"
         )
+
+        existing_docs_count=len(vector_store.get()["ids"])
+        if existing_docs_count>0:
+            print(f"Found existing embeddings on disk for Video ID '{video_id}' ({existing_docs_count} vectors loaded instantly)!")
+        else:
+            loader=YoutubeLoader.from_youtube_url(
+                formatted_url,
+                add_video_info=False,
+                language=["en","en-US","en-GB","hi"]
+                )
+
+            docs=loader.load()
+            print("Transcript fetched successfully!")
+
+            splitter=RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=200)
+
+            chunks=splitter.split_documents(docs)
+            print(f"Total Text Chunks Created: {len(chunks)}")
+
+            vector_store=Chroma.from_documents(
+                persist_directory="./chroma_db",
+                documents=chunks,
+                embedding=embedding,
+                collection_name=f"yt_{video_id.lower()}"
+             )
+
 
         base_retriever = vector_store.as_retriever(search_type="mmr",search_kwargs={"k": 3})
         advanced_retriever=MultiQueryRetriever.from_llm(
