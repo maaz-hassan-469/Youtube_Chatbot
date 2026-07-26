@@ -3,10 +3,11 @@ from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingF
 # from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings
 # from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from langchain_chroma import Chroma
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder 
 from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
+from langchain_core.messages import HumanMessage,AIMessage
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 import os
@@ -37,21 +38,20 @@ model= ChatGroq(
 # embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 embedding=HuggingFaceEndpointEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2")
 
-prompt_template=PromptTemplate(
-    template="""Answer the question based ONLY on the provided video transcript context.
-    If you don't know the answer, say that you don't know based on this video.
-    
-    Context:
-    {context}
-    
-    Question: {question}
-    
-    Answer:""",
-    input_variables=['context','question']
-)
+prompt_template=ChatPromptTemplate.from_messages([
+("system","""Answer the question based ONLY on the provided video transcript context.
+If you don't know the answer, say that you don't know based on this video.
+Context:
+{context}
+"""),
+MessagesPlaceholder(variable_name="chat_history"),
+("human","{question}")
+])
 parser=StrOutputParser()
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
+
+chat_memories={}
 
 while(True):
     video_id=input("\n==================================================\nEnter Video ID to process (or type 'exit' to quit): ")
@@ -98,26 +98,38 @@ while(True):
             llm=model
         )
 
-        print("Vectorstore ready for questions!")
-     
-        setup_and_retrieval = RunnableParallel(
-            {
-                "context": advanced_retriever | RunnableLambda(format_docs),
-                "question": RunnablePassthrough()
-            }
-        )
+        if video_id not in chat_memories:
+            chat_memories[video_id]=[]
 
-        rag_chain = setup_and_retrieval | prompt_template | model | parser
+        print("Vectorstore ready for questions!")
 
         while(True):
             user_query = input(f"\n[Video: {video_id}] Ask a question (or type 'back' for new video): ").strip()
             if user_query.lower() in ["back","exit"]:
                 break
 
+            retrieved_docs = advanced_retriever.invoke(user_query)
+            context_text = format_docs(retrieved_docs)
+
+            current_history=chat_memories[video_id]
+
+            formatted_prompt = prompt_template.format_messages(
+                context=context_text,
+                chat_history=current_history,
+                question=user_query
+            )
+
             print("\nAnswer: ", end="", flush=True)
-            for chunk in rag_chain.stream(user_query):
-                 print(chunk, end="", flush=True)
+            full_response = ""
+            for chunk in model.stream(formatted_prompt):
+                content = chunk.content if hasattr(chunk, "content") else str(chunk)
+                full_response += content
+                print(content, end="", flush=True)
             print()
+
+            # 5. Append User Query & Model Answer to Video's History List in Dictionary
+            chat_memories[video_id].append(HumanMessage(content=user_query))
+            chat_memories[video_id].append(AIMessage(content=full_response))
 
     except Exception as e:
         print(f"\nError Details: {e}")
