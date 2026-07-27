@@ -1,12 +1,10 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-# from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings,HuggingFaceEndpoint
-from langchain_huggingface import HuggingFaceEndpointEmbeddings
 # from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder 
 from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
-# from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_core.messages import HumanMessage,AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
@@ -36,7 +34,9 @@ model = ChatGoogleGenerativeAI(
 )
 
 # embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-embedding=HuggingFaceEndpointEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2")
+embedding=FastEmbedEmbeddings(
+    model_name="BAAI/bge-small-en-v1.5"
+)
 
 prompt_template=ChatPromptTemplate.from_messages([
 ("system","""Answer the question based ONLY on the provided video transcript context.
