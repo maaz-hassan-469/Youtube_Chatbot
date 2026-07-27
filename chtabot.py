@@ -1,19 +1,19 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings
-# from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings
+# from langchain_huggingface import ChatHuggingFace,HuggingFaceEmbeddings,HuggingFaceEndpointEmbeddings,HuggingFaceEndpoint
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 # from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder 
 from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
+# from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
 from langchain_core.messages import HumanMessage,AIMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
 import os
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 load_dotenv()
-os.environ["HF_TOKEN"] = os.getenv("HUGGINGFACEHUB_API_TOKEN", "")
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
 # while(True):
 #     video_id=input("enter a video_id to ask question:")
 #     if video_id.lower()=="exit":
@@ -28,11 +28,11 @@ os.environ["HF_TOKEN"] = os.getenv("HUGGINGFACEHUB_API_TOKEN", "")
 # llm=HuggingFaceEndpoint(repo_id="deepseek-ai/DeepSeek-V4-Flash",
 #                         task="text-generation",
 #                         temperature=0.3)
-# model1=ChatHuggingFace(llm=llm)
-
-model= ChatGroq(
-    model_name="llama-3.1-8b-instant", 
-    temperature=0.2
+# model=ChatHuggingFace(llm=llm)
+model = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    temperature=0.2,
+    max_retries=5
 )
 
 # embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
