@@ -6,12 +6,11 @@ from langchain_community.document_loaders import YoutubeLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_core.messages import HumanMessage,AIMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 from dotenv import load_dotenv
 import os
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 load_dotenv()
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
 # while(True):
 #     video_id=input("enter a video_id to ask question:")
 #     if video_id.lower()=="exit":
@@ -27,10 +26,10 @@ os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
 #                         task="text-generation",
 #                         temperature=0.3)
 # model=ChatHuggingFace(llm=llm)
-model = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
-    temperature=0.2,
-    max_retries=5
+
+model = ChatOllama(
+    model="llama3.2:1b",
+    temperature=0.2
 )
 
 # embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
@@ -92,11 +91,7 @@ while(True):
              )
 
 
-        base_retriever = vector_store.as_retriever(search_type="mmr",search_kwargs={"k": 3,"fetch_k": 10, "lambda_mult": 0.5})
-        advanced_retriever=MultiQueryRetriever.from_llm(
-            retriever=base_retriever,
-            llm=model
-        )
+        advanced_retriever = vector_store.as_retriever(search_type="mmr",search_kwargs={"k": 3,"fetch_k": 10, "lambda_mult": 0.5})
 
         if video_id not in chat_memories:
             chat_memories[video_id]=[]
